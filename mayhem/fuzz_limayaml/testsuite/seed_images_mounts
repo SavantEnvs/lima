@@ -1,0 +1,6 @@
+images:
+- location: "https://example.com/x.img"
+  arch: x86_64
+mounts:
+- location: "~"
+  writable: true

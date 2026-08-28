@@ -1,0 +1,9 @@
+base: template://default
+vmType: qemu
+ssh:
+  localPort: 0
+provision:
+- mode: system
+  script: |
+    #!/bin/sh
+    echo hi

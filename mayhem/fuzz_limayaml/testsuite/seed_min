@@ -1,0 +1,3 @@
+cpus: 4
+memory: "2GiB"
+arch: aarch64

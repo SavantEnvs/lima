@@ -1,0 +1,38 @@
+// mayhem/harness_limayaml.go.src — native testing.F harness for lima's YAML
+// config PARSER (the byte-eating surface). Staged by mayhem/build.sh into a
+// fresh, single-package directory (_mayhem_harness/limayaml) that holds a copy
+// of the upstream pkg/limayaml/marshal.go (which defines Unmarshal) alongside
+// this harness, so go-118-fuzz-build builds it WITHOUT the upstream
+// pkg/limayaml/ dir's test files and its heavy defaults.go package-init
+// (Must(os.UserHomeDir())/Must(user.Current())) + huge transitive deps.
+//
+// Declared `package limayaml` (the directory's INTERNAL package) so it calls
+// Unmarshal directly — go-118-fuzz-build rewrites this into an ordinary
+// non-test .go file, so a *_test package would collide with the copied
+// `package limayaml` source.
+//
+// Byte-in, NO file I/O (netnew §3): the fuzzer's bytes are decoded straight
+// from an in-memory buffer via Unmarshal, which runs BOTH YAML engines lima
+// uses — goccy/go-yaml (with lima's custom unmarshalers) AND mikefarah/yq's
+// decoder (yqutil.ValidateContent) — plus a strict re-parse. No path is read.
+package limayaml
+
+import (
+	"testing"
+
+	"github.com/lima-vm/lima/v2/pkg/limatype"
+)
+
+// FuzzLimaYAML drives Unmarshal — lima's LimaYAML config decoder — over raw
+// fuzzer bytes. This is the same parse entrypoint pkg/limayaml/load.go's
+// Load() funnels every config/template document through before FillDefault.
+func FuzzLimaYAML(f *testing.F) {
+	f.Add([]byte("cpus: 4\nmemory: \"2GiB\"\narch: aarch64\n"))
+	f.Add([]byte("images:\n- location: https://example.com/i.img\n  arch: x86_64\n"))
+	f.Add([]byte("base: template://default\nmounts:\n- location: \"~\"\n"))
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		var y limatype.LimaYAML
+		_ = Unmarshal(data, &y, "fuzz")
+	})
+}

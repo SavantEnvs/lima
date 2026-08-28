@@ -1,0 +1,44 @@
+// mayhem/kat_export.go.src — a known-answer parse through lima's YAML config
+// decoder, exported so the dynamically-linked KAT probe (mayhem/kat) can assert
+// exact field values. Staged by mayhem/build.sh into _mayhem_harness/limayaml
+// alongside the copied upstream marshal.go, so it reaches Unmarshal — the same
+// decode path the fuzz harness exercises.
+//
+// This is the BEHAVIORAL oracle's engine: it parses a fixed LimaYAML document
+// and returns the decoded fields. test.sh asserts these exact values; when the
+// program is neutered (LD_PRELOAD _exit(0)), the probe prints nothing and every
+// assertion fails — which is the point (SPEC §6.3 / netnew §4).
+package limayaml
+
+import (
+	"github.com/lima-vm/lima/v2/pkg/limatype"
+)
+
+// KATParse decodes a fixed LimaYAML document via Unmarshal and returns:
+//
+//	cpus    — decoded .cpus    (4)
+//	memory  — decoded .memory  ("2GiB")
+//	arch    — decoded .arch    ("aarch64")
+//	message — decoded .message ("hello-lima")
+func KATParse() (cpus int, memory, arch, message string, err error) {
+	const doc = `cpus: 4
+memory: "2GiB"
+arch: aarch64
+message: hello-lima
+`
+	var y limatype.LimaYAML
+	if e := Unmarshal([]byte(doc), &y, "kat"); e != nil {
+		return 0, "", "", "", e
+	}
+	if y.CPUs != nil {
+		cpus = *y.CPUs
+	}
+	if y.Memory != nil {
+		memory = *y.Memory
+	}
+	if y.Arch != nil {
+		arch = string(*y.Arch)
+	}
+	message = y.Message
+	return cpus, memory, arch, message, nil
+}
