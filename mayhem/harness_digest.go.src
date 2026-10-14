@@ -1,0 +1,25 @@
+// mayhem/harness_digest.go.src — native testing.F harness for lima's download
+// option validation (pkg/downloader.WithExpectedDigest). Staged by mayhem/build.sh
+// into a single-package directory (_mayhem_harness/downloader) beside a copy of
+// the upstream pkg/downloader non-test sources, so go-118-fuzz-build builds it
+// without the package's test files. Declared `package downloader` so it reaches
+// the unexported options struct. Byte-in, no file I/O.
+package downloader
+
+import (
+	"testing"
+
+	"github.com/opencontainers/go-digest"
+)
+
+// FuzzDigest feeds a fuzzer-controlled string to WithExpectedDigest, the entry
+// point limactl funnels every user-supplied `digest:` through.
+func FuzzDigest(f *testing.F) {
+	f.Add("sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+	f.Add("sha001:69f31d3208895e5f646e345fbc95190e5e311ecd1359a4d6ee2c0b6483ceca03")
+
+	f.Fuzz(func(t *testing.T, s string) {
+		var o options
+		_ = WithExpectedDigest(digest.Digest(s))(&o)
+	})
+}
