@@ -1,0 +1,8 @@
+project: savantenvs/lima
+target: fuzz_digest-mined-c1b8496
+testsuite:
+  - https://$MAYHEM_DOMAIN/$MAYHEM_PROJECT/$MAYHEM_TARGET/testsuite.tar
+  - file://mayhem/fuzz_digest-mined-c1b8496/testsuite
+cmds:
+  - cmd: /mayhem/fuzz_digest
+    libfuzzer: true

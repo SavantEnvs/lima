@@ -1,0 +1,21 @@
+// mayhem/kat_export.go.src — known-answer probe for the digest option, staged
+// beside the downloader sources so the dynamically-linked mayhem/kat probe can
+// assert exact values through the real WithExpectedDigest path.
+package downloader
+
+import (
+	"github.com/opencontainers/go-digest"
+)
+
+// KATDigest applies WithExpectedDigest to a valid sha256 digest (accepted, stored
+// verbatim) and to a malformed one (rejected with an error).
+func KATDigest() (accepted string, algo string, badRejected bool) {
+	const good = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	var o options
+	if err := WithExpectedDigest(digest.Digest(good))(&o); err != nil {
+		return "", "", false
+	}
+	var o2 options
+	err := WithExpectedDigest(digest.Digest("sha256:zz"))(&o2)
+	return o.expectedDigest.String(), o.expectedDigest.Algorithm().String(), err != nil
+}
